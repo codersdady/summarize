@@ -42,7 +42,7 @@
 
 - Java需要编译，但编译后不能直接运行。
 
-  ![](C:\Users\whqsh\Desktop\总结\jvm\pic\2.webp)
+  ![](/pic/2.webp)
 
 ## 永久代和元空间
 
