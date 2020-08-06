@@ -81,7 +81,7 @@
     - 生产端：JMQ2的客户端会自动将发送失败的消息重发给同主题处于Broker的队列，切换过程中有可能短时出现**发送时延**升高，**极小概率会出现发送失败**的情况，切换完成后上述问题都会**自动恢复**。
     - 每个Broker都是一主一备的热备模式，备用Broker与主用Broker采用异步方式同步数据。主用Broker宕机后，消费端会自动切换到备用Broker，备用Broker上拥有主用Broker上绝大部分消息。可能存在少量新消息没来得及同步到备用Broker上，这部分消息暂时无法消费，但可以在主用Broker恢复后继续消费，不会丢失。
     - 在消费者端，Broker宕机后，仍然可以在备用Broker上继续消费，切换过程中有可能短时间出现**消费性能下降**，**消息被重复消费**，**消息乱序**，切换完成后上述问题都会**自动恢复**。
-  - JMQ4:[raft一致性](https://raft.github.io/)（Leader、Follower、Candidate）。
+  - JMQ4:[raft一致性](https://raft.github.io/) [raft详解](https://www.cnblogs.com/likehua/p/5845575.html)（Leader、Follower、Candidate）**日志复制**。
 
 - 如何保证消息不被重复消费
   - 成功消费后发送ack。
