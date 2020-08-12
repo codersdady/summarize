@@ -114,6 +114,37 @@ Session是服务器端使用的一种记录客户端状态的机制
 - Tomcat中Session默认失效时间为20分钟。
 - 调用Session的invalidate方法。
 
+## Java对象的大小
+
+```java
+Object ob = new Object();
+```
+
+在java中一个空Object对象的大小是8byte，那么它所占的空间为：4byte+8byte。4byte为Java栈中保存引用的所需要的空间。8byte为Java堆中对象的信息。Java非基本类型对象都默认继承Object对象，大小必须大于8byte。
+
+```java
+Class NewObject {
+    int count;
+    boolean flag;
+    Object ob;
+}
+    //其大小为：空对象大小(8byte)+int大小(4byte)+Boolean大小(1byte)+空Object引用的大小(4byte)=17byte。但是因为Java在对对象内存分配时都是以8的整数倍来分，因此大于17byte的最接近8的整数倍的是24，因此此对象的大小为24byte。
+```
+
+- 包装类已经成为对象，至少12byte（声明Object最小空间），java对象是8的整数倍，因此一个基本类型包装类至少16byte。
+
+## 引用类信息
+
+- 强引用：一般声明对象是虚拟机生成的引用，强引用下，垃圾回收需要严格判断当前对象是否被强引用，如果被强引用，则不会被垃圾回收。
+- 软引用：一般作为缓存使用。软引用在垃圾回收时，虚拟机根据当前系统剩余内存来决定是否堆软引用进行回收。**发生OutOfMemory时，肯定没有软引用存在。**
+- 弱引用：弱引用与软引用类似，弱引用在进行垃圾回收时，是一定会被回收掉的。
+
+
+
+
+
+
+
 ## Java内存模型
 
 Java线程之间的通信由Java内存模型（Java Memory Model，简称JMM）控制。JMM决定一个线程对共享变量的写入何时对另一个线程可见。
