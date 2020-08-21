@@ -306,3 +306,238 @@ happens-before关系本质上和as-if-serial语义是一回事。as-if-serial语
 - 在构造函数内对一个final引用的对象的成员域的写入，与随后在构造函数外把这个被构造对象的引用赋值给一个引用变量，这两个操作之间不能重排序。
 - 会要求编译器在final域的写之后，构造函数return之前插入一个StoreStore障屏。
 - 读final域的重排序规则要求编译器在读final域的操作前面插入一个LoadLoad屏障
+
+## ArrayList
+
+- 默认大小10
+- 扩容1.5倍
+
+### 增
+
+#### add()
+
+`add(E object)`这个方法，是直接添加一个元素，是在尾部进行插入。
+
+如果原数组的大小不够会先进行扩容。
+
+最终将数据添加在尾部，同时大小加1.
+
+####  add(int index, E object) 在指定位置添加一个元素
+
+1. 如果数组够用，即 `s<a.length`时，直接调用`arraycopy()`，将从index开始的所有数据都往后挪一位。
+
+2. 如果数组满了，即`s>=a.length`时，这里就要
+
+   a. 先将原数组进行扩容，生成新的数组；
+
+   b. 将原数组中index之前的数据复制到新数组对应的位置中去。
+
+   c. 将原数组中index之后的数据往后挪一位的移动到新的数组中去。
+
+   d. 将新数组赋给array。
+
+### 删除
+
+#### remove(int index)删除指定位置元素
+
+把删除元素的后边数据全部前移一位
+
+```java
+public E remove(int index) {
+        rangeCheck(index);
+
+        modCount++;
+        E oldValue = elementData(index);
+
+        int numMoved = size - index - 1;
+        if (numMoved > 0)
+            System.arraycopy(elementData, index+1, elementData, index,
+                             numMoved);
+        elementData[--size] = null; // clear to let GC do its work
+
+        return oldValue;
+    }
+```
+
+#### remove(Object object) 删除某个已知元素
+
+从前往后遍历，找到第一个equals删除，如果是类需要重写equals，
+
+```java
+public boolean remove(Object o) {
+        if (o == null) {
+            for (int index = 0; index < size; index++)
+                if (elementData[index] == null) {
+                    fastRemove(index);
+                    return true;
+                }
+        } else {
+            for (int index = 0; index < size; index++)
+                if (o.equals(elementData[index])) {
+                    fastRemove(index);
+                    return true;
+                }
+        }
+        return false;
+    }
+```
+
+**遍历删除的时候，需要从后往前删除，否则会删除不干净，因为删除一个元素，后边的元素会向前移动。**
+
+### 改、查
+
+- 查直接返回数据相应索引的数据。
+
+- 改会返回旧值。
+
+  ```java
+  public E set(int index, E element) {
+      rangeCheck(index);
+  
+      E oldValue = elementData(index);
+      elementData[index] = element;
+      return oldValue;
+  }
+  ```
+
+### 遍历
+
+遍历ArrayList有3种方式：
+
+- 一种是普通for循环的方式。
+
+- 一种是增强for循环的方式。
+
+- 还有一种是迭代器的方式。
+
+  ```java
+  Iterator<String> iterator = arrayList.iterator();
+  while (iterator.hasNext()) {
+      System.out.print(iterator.next());
+  }
+  ```
+
+## HashMap
+
+### HashMap和HashTable区别
+
+**相同点：**
+
+HashMap和HashTable都是基于哈希表实现，每个元素都是key-value键值对，HashMap和HashTable都实现了Map、Cloneable、Serializable接口。
+
+**不同点：**
+
+- 父类不同：HashMap继承了AbstractMap类，而HashTable继承了Dictionary类。
+- 空值不同：HashMap允许空的key和value值，HashTable和ConcurrentHashMap不允许空的key和value值。（一部分说是规范；二是并发对象会改变，无法确认是null类型还是没有这个元素）
+- 线程安全：HashMap不是线程安全的，HashTable和ConcurrentHashMap是安全的。
+- HashMap进行put或get，可以达到常数时间，HashTable的put和get加了synchronized锁，效率差。
+- 初始容量不同：HashTable初始11，扩容为之前的2n+1，HashMap初始为16，扩容2倍。如果给定大小，HashMap会扩充到2的幂次方大小。
+
+### HashMap和HashSet的区别
+
+HashSet继承于AbstractSet接口，实现了Set、Cloneable、java.io.Serializable接口。HashSet不会出现重复值。HashSet底层其实就是HashMap，对HashSet的操作就是对HashMap的操作。
+
+### HashMap底层结构
+
+![](pic/hashmap.png)
+
+### AbstractMap类
+
+Map接口的骨干实现，最大化的减少实现类的工作量。为了实现不可修改的 map，程序员仅需要继承这个类并且提供 entrySet 方法的实现即可。它将会返回一组 map 映射的某一段。通常，返回的集合将在AbstractSet 之上实现。这个set不应该支持 add 或者 remove 方法，并且它的迭代器也不支持 remove 方法。
+
+为了实现可修改的 map，程序员必须额外重写这个类的 put 方法(否则就会抛出UnsupportedOperationException)，并且 entrySet.iterator() 返回的 iterator 必须实现 remove() 方法。
+
+### Map接口
+
+Map 接口定义了 key-value 键值对的标准。一个对象支持 key-value 存储。Map不能包含重复的 key，每个键最多映射一个值。这个接口代替了Dictionary 类，Dictionary是一个抽象类而不是接口。
+
+Map 接口提供了三个集合的构造器，它允许将 map 的内容视为一组键，值集合或一组键值映射。map的顺序定义为map映射集合上的迭代器返回其元素的顺序。一些map实现，像是TreeMap类，保证了map的有序性；其他的实现，像是HashMap，则没有保证。
+
+### 重要内部类和接口
+
+#### Node接口
+
+Node节点用来存储HashMap的一个个实例，实现了Map.Entry接口；Node<K,V>[ ] tab就是数组，tab所存储元素为每个链表的第一个元素。
+
+每个数组的位置就是一个哈希值，如果两个值哈希值一样，就会占用一个位置，他们就成了一个链表。
+
+```java
+ static class Node<K,V> implements Map.Entry<K,V> {
+        final int hash;
+        final K key;
+        V value;
+        Node<K,V> next;
+        
+        ...
+}
+```
+
+#### Map.Entry
+
+一个map的entry链，Map.Entry是Map声明的一个内部接口，此接口为泛型，定义为Entry<K,V>。它表示Map中的一个实体（一个key-value对）。接口中有getKey(),getValue方法。
+
+```java
+ Map<String, String> map = new HashMap<String, String>();    
+  map.put("key1", "value1");    
+  map.put("key2", "value2");    
+  map.put("key3", "value3");    
+      
+  //第一种：普遍使用，二次取值    
+  System.out.println("通过Map.keySet遍历key和value：");    
+  for (String key : map.keySet()) {    
+   System.out.println("key= "+ key + " and value= " + map.get(key));    
+  }    
+      
+  //第二种    
+  System.out.println("通过Map.entrySet使用iterator遍历key和value：");    
+  Iterator<Map.Entry<String, String>> it = map.entrySet().iterator();    
+  while (it.hasNext()) {    
+   Map.Entry<String, String> entry = it.next();    
+   System.out.println("key= " + entry.getKey() + " and value= " + entry.getValue());    
+  }    
+      
+ //第三种：推荐，尤其是容量大时</span>    
+  System.out.println("通过Map.entrySet遍历key和value");    
+  for (Map.Entry<String, String> entry : map.entrySet()) {    
+   System.out.println("key= " + entry.getKey() + " and value= " + entry.getValue());    
+  }    
+    
+  //第四种    
+  System.out.println("通过Map.values()遍历所有的value，但不能遍历key");    
+  for (String v : map.values()) {    
+   System.out.println("value= " + v);    
+  }
+```
+
+
+
+### HashMap 1.7底层结构
+
+JDK1.7中，HashMap采用位桶+链表的实现，HashMap底层数据接口就是一个Entry数组，Entry是HashMap的基本组成单元，每个Entry包含了一个key-value键值对。
+
+每个Entry中包含[hash，key，value]属性，它是HashMap的一个内部类。
+
+![](pic/1.7HashMap.png)
+
+### HashMap 1.8底层结构
+
+1.8底层结构做了一些改变，当每个桶中元素大于8时，会转变为红黑树优化查询效率，重写了resize() 方法。
+
+### HashMap属性
+
+- HashMap默认容量16.
+
+- HashMap最大容量1<<30（int四个字节，最大左移31，最高位是符号为，最大左移30）。
+- 默认负载因子0.75f。
+- 树化阈值：一个桶中存储元素大于8并且数组长度大于等于64会转化为红黑树。
+- 链表阈值：一个桶中存储元素数量<6后，会转化为链表。
+- 节点数组：HashMap中节点数组是Entry数组`transient Node<K,V>[] table`，Node数组在第一次使用的时候进行初始化操作，在必要的时候进行resize，resize后数组长度扩容为原来的二倍。
+
+### put()
+
+大致过程如下，首先会使用 hash 方法计算对象的哈希码，根据哈希码来确定在 bucket 中存放的位置，如果 bucket 中没有 Node 节点则直接进行 put，如果对应 bucket 已经有 Node 节点，会对链表长度进行分析，判断长度是否大于 8，如果链表长度小于 8 ，在 JDK1.7 前会使用头插法，在 JDK1.8 之后更改为尾插法。如果链表长度大于 8 会进行树化操作，把链表转换为红黑树，在红黑树上进行存储。
+
+
+
+
+
