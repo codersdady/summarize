@@ -251,41 +251,118 @@ Region是G1回收器一次回收的最小单元。每次回收都是N个Region�
 
 虚拟机把描述类的数据加载到内存里面，并对数据进行校验、解析和初始化，最终变成可以被虚拟机直接使用的class对象；
 
-加载、验证、准备、解析、初始化：
+- 装载 （Loading）
+  - 该阶段负责找到待加载类的二进制 class 文件， 并把它以 bytecode 的形式装载到虚拟机。 在这个过程中， JVM 会给这个类分配一个基本的内存结构， 但是方法， 变量域， 和它引用到的其他类在这个阶段都还没有处理， 也就是说， 这个类在目前阶段还不可用
+- 链接 （Linking）
+  - 这个步骤又可细分为3个阶段
+  - 字节码验证
+    - 验证字节码是否是一个正确，符合规范的类字节码
+  - 类准备
+    - 为这个类定义好必须的数据结构以表示成员变量域， 方法， 以及实现的接口等等
+  - 解析
+    - 把这个类所引用的其他类全部加载进来, 引用的方式有如下几种：
+      - 继承
+      - 实现接口
+      - 域变量
+      - 方法定义
+      - 方法中定义的本地变量
+- 初始化（Initializing）
+  - 执行类中定义的静态代码块， 初始化静态变量为默认值
 
-1. 通过类的全限定性类名获取该类的二进制流；
-2. 将该二进制流的静态存储结构转为方法区的运行时数据结构；
-3. 在堆中为该类生成一个class对象；
+![](pic/类加载.png)
 
-- 验证：验证该class文件中的字节流信息复合虚拟机的要求，不会威胁到jvm的安全；
+### 显式类加载与隐式类加载
 
-- 准备：为class对象的静态变量分配内存，初始化其初始值；
+从上文类加载的详细过程可以看出， 类有两种方式被加载进来
 
-- 解析：该阶段主要完成符号引用转化成直接引用；
-
-- 初始化：到了初始化阶段，才开始执行类中定义的java代码；初始化阶段是调用类构造器的过程；
+- 显式加载
+  - 程序主动调用下列类型的方法去主动加载一个类
+    - classloader.loadClass( className)
+    - Class.forName( className)
+- 隐式加载
+  - 被显式加载的类对其他类可能存在如下引用：
+    - 继承
+    - 实现接口
+    - 域变量
+    - 方法定义
+    - 方法中定义的本地变量
+  - 被引用的类会被动地一并加载至虚拟机， 这种加载方式属于隐式加载
 
 ## 类加载器
 
 通过一个类的全限定性类名获取该类的二进制字节流。
 
-- 启动类加载器：用来加载java核心类库，无法被java程序直接引用。
-- 扩展类加载器：用来加载java的扩展库，java的虚拟机实现会提供一个拓展库目录，该类加载器在拓展库目录里面查找并加载java类。
-- 系统类加载器：它根据java的类路径来加载类，java应用的类都是通过它来加载的。
+- 启动类加载器（BootStrapClassLoader）：用来加载java核心类库，无法被java程序直接引用， 例如 `ArrayList`.
+- 扩展类加载器（ExtClassLoader）：用来加载java的扩展库，java的虚拟机实现会提供一个拓展库目录，该类加载器在拓展库目录里面查找并加载java类。 通常是搜索 `$JAVA_HOME/lib/ext` 中的文件或是任意定义在 `java.ext.dirs` 属性中的文件夹下的文件予以加载
+- 应用程序类加载器（AppClassLoader）：它根据java的类路径来加载类，java应用的类都是通过它来加载的。负责加载 `classpath` 下的文件
 - 自定义类加载器：由java语言实现，继承自ClassLoader。
 
 ### 双亲委派模型
 
+[类加载机制](https://blog.csdn.net/lengxiao1993/article/details/86689331)
+
 当一个类加载器收到一个类加载的请求，他首先不会尝试自己去加载，而是将这个请求委派给父类加载器去加载，只有父类加载器在自己的搜索范围类查找不到给类时，子加载器才会尝试自己去加载该类；
+
+```java
+public Class<?> loadClass(String name) throws ClassNotFoundException {
+     return loadClass(name, false);
+}
+  
+protected Class<?> loadClass(String name, boolean resolve)
+            throws ClassNotFoundException
+        {
+            synchronized (getClassLoadingLock(name)) {
+                // First, check if the class has already been loadCed
+                Class<?> c = findLoadedClass(name);
+                if (c == null) {
+                    long t0 = System.nanoTime();
+                    try {
+                        if (parent != null) {
+                            c = parent.loadClass(name, false);
+                        } else {
+                            c = findBootstrapClassOrNull(name);
+                        }
+                    } catch (ClassNotFoundException e) {
+                        // ClassNotFoundException thrown if class not found
+                        // from the non-null parent class loader
+                    }
+    
+                    if (c == null) {
+                        // If still not found, then invoke findClass in order
+                        // to find the class.
+                        long t1 = System.nanoTime();
+                        c = findClass(name);
+    
+                        // this is the defining class loader; record the stats
+                        sun.misc.PerfCounter.getParentDelegationTime().addTime(t1 - t0);
+                        sun.misc.PerfCounter.getFindClassTime().addElapsedTimeFrom(t1);
+                        sun.misc.PerfCounter.getFindClasses().increment();
+                    }
+                }
+                if (resolve) {
+                    resolveClass(c);
+                }
+                return c;
+            }
+        }
+```
+
+
 
 ### 双亲委派模型的原因
 
-1、防止重复加载同一个.class，内存中出现多个相同的字节码。通过委托去向上面问一问，加载过了，就不用再加载一遍。保证数据安全。
+- 采用双亲委派模式的是好处是Java类随着它的类加载器一起具备了一种带有优先级的层次关系，通过这种层级关可以避免类的重复加载，当父亲已经加载了该类时，就没有必要子ClassLoader再加载一次。
+- 其次是考虑到安全因素，java核心api中定义类型不会被随意替换，假设通过网络传递一个名为java.lang.Integer的类，通过双亲委托模式传递到启动类加载器，而启动类加载器在核心Java，API发现这个名字的类，发现该类已被加载，并不会重新加载网络传递的过来的java.lang.Integer，而直接返回已加载过的Integer.class，这样便可以防止核心API库被随意篡改。
 
-​	2、保证核心.class不能被篡改。通过委托方式，不会去篡改核心.class，即使篡改也不会去加载，即使加载也不会是同一个.class对象了。
+### 打破双亲委派模型
 
-不同的加载器加载同一个.class也不是同一个Class对象。这样保证了Class执行安全。
+- 自定义类加载器，继承ClassLoader类，重写loadClass方法和findClass方法；
 
-### 怎么打破双亲委派模型？
+  - findClass（）用于写类加载逻辑、loadClass（）方法的逻辑里如果父类加载器加载失败则会调用自己的findClass（）方法完成加载，保证了双亲委派规则。
 
-自定义类加载器，继承ClassLoader类，重写loadClass方法和findClass方法；
+  - 如果不想打破双亲委派模型，那么只需要重写findClass方法即可
+
+  - 如果想打破双亲委派模型，那么就重写整个loadClass方法
+
+- Tomcat 需要有能力同时运行多个 war 包， 而每个 war 包中都拥有各自的依赖 lib 库(`WEB-INF/lib`) 以及各自的项目代码(`WEB-INF/classes`)， 为了保证每个 web 项目可以共同运行， 互不干扰， Tomcat 为每个项目都创建一个单独 webapp classloader, 它会负责加载对应的 web 项目下 `WEB-INF/classes` 的 class 文件和资源以及 `WEB-INF/lib` 下的jar 包中所包含的 class 文件和资源文件， 使得这些被加载的内容仅对该 web 项目可见， 对其他 web 项目不可见。
+- 注意到为了打破父委派模型， 我们重写 `loadClass(String name)` 方法, 在该方法中， `java.` 开头的类， 我们还是调用 jdk 提供的加载器去加载。因为这些核心类 jdk 做了权限保护， 如果直接尝试加载一个自定义的 `java.` 开头的核心类， 例如 `java.lang.Object` 的话， 在执行 defineClass 时会报权限错误。
