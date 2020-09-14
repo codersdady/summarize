@@ -326,6 +326,14 @@ happens-before关系本质上和as-if-serial语义是一回事。as-if-serial语
 - 默认大小10
 - 扩容1.5倍
 
+- ArrayList可以通过构造方法在初始化的时候指定底层数组的大小。
+  - 通过无参构造方法的方式ArrayList()初始化，则赋值底层数Object[] elementData为一个默认空数组Object[] DEFAULTCAPACITY_EMPTY_ELEMENTDATA = {}所以数组容量为0，只有真正对数据进行添加add时，才分配默认DEFAULT_CAPACITY = 10的初始容量。
+  - ArrayList（int initialCapacity）**会初始化数组大小！但是List的大小没有变，因为list的大小是返回size的。**
+- Vector的实现很简单，就是把所有的方法统统加上synchronized。
+- 线程不安全：
+  - add越界
+  - 数值覆盖
+
 ### 增
 
 #### add()
