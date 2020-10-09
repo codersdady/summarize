@@ -292,6 +292,7 @@ happens-before关系本质上和as-if-serial语义是一回事。as-if-serial语
 - 有volatile变量修饰的共享变量进行写操作的时候会使用CPU提供的Lock前缀指令：
   - 将当前处理器缓存行的数据写回到系统内存
   - 这个写回内存的操作会使在其他CPU里缓存了该内存地址的数据无效。
+- ==单例模式用volatile：防止指令重排，读到未初始化完成的对象==。
 
 #### synchronized的实现原理
 
