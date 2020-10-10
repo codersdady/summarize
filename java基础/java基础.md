@@ -265,6 +265,8 @@ JMM把内存屏障指令分为4类，StoreLoad barriers是一个全能屏障，�
 
 ![](pic/内存屏障.webp)
 
+![volatile底层](pic\volatile底层.png)
+
 #### 临界区
 
 临界区内的代码可以重排序，但JMM不允许临界区内的代码“逸出”到临界区之外。
