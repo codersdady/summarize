@@ -295,6 +295,7 @@ happens-before关系本质上和as-if-serial语义是一回事。as-if-serial语
   - 将当前处理器缓存行的数据写回到系统内存
   - 这个写回内存的操作会使在其他CPU里缓存了该内存地址的数据无效。
 - ==单例模式用volatile：防止指令重排，读到未初始化完成的对象==。
+- volatile可以用缓存一致性保障，可以用总线锁保障。
 
 #### synchronized的实现原理
 
