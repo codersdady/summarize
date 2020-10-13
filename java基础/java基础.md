@@ -265,7 +265,7 @@ JMM把内存屏障指令分为4类，StoreLoad barriers是一个全能屏障，�
 
 ![](pic/内存屏障.webp)
 
-![volatile底层](pic\volatile底层.png)
+![volatile底层](pic/volatile底层.png)
 
 #### 临界区
 
