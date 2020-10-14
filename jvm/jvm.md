@@ -228,7 +228,7 @@ Java VisualVM
 
 清理老年代
 
-![](pic/GC区别.jpg)
+![9](pic/GC区别.jpg)
 
 ### JVM中一次完整的GC，对象如何晋升到老年代
 
