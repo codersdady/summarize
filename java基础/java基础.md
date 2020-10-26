@@ -563,6 +563,52 @@ JDK1.7中，HashMap采用位桶+链表的实现，HashMap底层数据接口就�
 
 大致过程如下，首先会使用 hash 方法计算对象的哈希码，根据哈希码来确定在 bucket 中存放的位置，如果 bucket 中没有 Node 节点则直接进行 put，如果对应 bucket 已经有 Node 节点，会对链表长度进行分析，判断长度是否大于 8，如果链表长度小于 8 ，在 JDK1.7 前会使用头插法，在 JDK1.8 之后更改为尾插法。如果链表长度大于 8 会进行树化操作，把链表转换为红黑树，在红黑树上进行存储。
 
+## ConcurrentHashMap
+
+从JDK1.7版本的ReentrantLock+Segment+HashEntry，到JDK1.8版本中synchronized+CAS+HashEntry+红黑树。
+
+### 1.7
+
+由 Segment 数组、HashEntry 组成，和 HashMap 一样，仍然是数组加链表。
+
+原理上来说：ConcurrentHashMap 采用了分段锁技术，其中 Segment 继承于 ReentrantLock。不会像 HashTable 那样不管是 put 还是 get 操作都需要做同步处理，理论上 ConcurrentHashMap 支持 CurrencyLevel (Segment 数组数量)的线程并发。每当一个线程占用锁访问一个 Segment 时，不会影响到其他的 Segment。
+
+#### put 方法
+
+1. 尝试自旋获取锁。
+2. 如果重试的次数达到了 `MAX_SCAN_RETRIES` 则改为阻塞锁获取，保证能获取成功。
+3. 将当前 Segment 中的 table 通过 key 的 hashcode 定位到 HashEntry。
+4. 遍历该 HashEntry，如果不为空则判断传入的 key 和当前遍历的 key 是否相等，相等则覆盖旧的 value。
+5. 不为空则需要新建一个 HashEntry 并加入到 Segment 中，同时会先判断是否需要扩容。
+6. 最后会解除在 1 中所获取当前 Segment 的锁。
+
+#### get方法
+
+只需要将 Key 通过 Hash 之后定位到具体的 Segment ，再通过一次 Hash 定位到具体的元素上。
+
+由于 HashEntry 中的 value 属性是用 volatile 关键词修饰的，保证了内存可见性，所以每次获取时都是最新值。
+
+ConcurrentHashMap 的 get 方法是非常高效的，**因为整个过程都不需要加锁**。
+
+### 1.8
+
+其中抛弃了原有的 Segment 分段锁，而采用了 `CAS + synchronized` 来保证并发安全性。其中的 `val next` 都用了 volatile 修饰，保证了可见性。
+
+#### put 方法
+
+- 根据 key 计算出 hashcode 。
+- 判断是否需要进行初始化。
+- `f` 即为当前 key 定位出的 Node，如果为空表示当前位置可以写入数据，利用 CAS 尝试写入，失败则自旋保证成功。
+- 如果当前位置的 `hashcode == MOVED == -1`,则需要进行扩容。
+- 如果都不满足，则利用 synchronized 锁写入数据。
+- 如果数量大于 `TREEIFY_THRESHOLD` 则要转换为红黑树。
+
+#### get 方法
+
+- 根据计算出来的 hashcode 寻址，如果就在桶上那么直接返回值。
+- 如果是红黑树那就按照树的方式获取值。
+- 就不满足那就按照链表的方式遍历获取值。
+
 ## [ThreadLocal与内存泄漏](https://zhuanlan.zhihu.com/p/58636499)
 
 ## 反射的缺点
