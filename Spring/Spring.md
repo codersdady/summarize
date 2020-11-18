@@ -30,6 +30,10 @@ scope配置
 
 # bean的生命周期
 
-init-method：用于配置初始化方法，准备数据等。
+createBeanInstance() ：（init-method）用于配置初始化方法，准备数据等。
 
-destroy-methos：用于配置销毁方法，清理资源等。（1.容器必须close，销毁方法执行。2.必须是单例）
+populateBean()：属性赋值
+
+initializeBean()：初始化
+
+ConfigurableApplicationContext#close()：（destroy-methos）用于配置销毁方法，清理资源等。（1.容器必须close，销毁方法执行。2.必须是单例）
