@@ -99,6 +99,8 @@ public class CallableTest {
 
 当一个请求发送到服务端的时候，服务端检查cookie中是否有sessionId，如果没有，服务端生成一个sessionID存到客户端的cookie中，然后可以在session中保存数据。当读取的session变量的时候，先会读取cookie中的session_id，获得session_id，然后再去获取对应的数据。*由于默认的PHPSESSID是临时的会话，在浏览器关闭后，会消失，所以，我们重新访问的时候，会新生成session_id和sess_这个文件。*
 
+只有在Cookie设置了保存时间超过默认时间时候才会生成文本文件，否侧就如上所说，存在http头里面，不会生成文本文档
+
 ### Cookie
 
 一个用户请求操作都属于同一个会话，不同用户请求不属于不同会话。而Http协议是无状态协议。数据交互完毕后，客户端与服务端的连接就会关闭，再次交换数据需要建立新的连接。
