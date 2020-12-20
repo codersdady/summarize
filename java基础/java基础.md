@@ -99,7 +99,7 @@ public class CallableTest {
 
 当一个请求发送到服务端的时候，服务端检查cookie中是否有sessionId，如果没有，服务端生成一个sessionID存到客户端的cookie中，然后可以在session中保存数据。当读取的session变量的时候，先会读取cookie中的session_id，获得session_id，然后再去获取对应的数据。*由于默认的PHPSESSID是临时的会话，在浏览器关闭后，会消失，所以，我们重新访问的时候，会新生成session_id和sess_这个文件。*
 
-只有在Cookie设置了保存时间超过默认时间时候才会生成文本文件，否侧就如上所说，存在http头里面，不会生成文本文档
+只有在Cookie设置了保存时间超过默认时间时候才会生成文本文件，否侧就如上所说，存在http头里面，不会生成文本文档                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
 
 ### Cookie
 
@@ -122,11 +122,21 @@ Session是服务器端使用的一种记录客户端状态的机制
 
 ## Java对象的大小
 
+java对象的表示关系如下所示：
+
+![java对象表示关系](pic/java对象表示关系.webp)
+
+其中`OopDesc`是对象实例的基类(Java实例在VM中表现为`instanceOopDesc`)，Klass是类信息的基类(Java类在VM中表现为`instanceKlass`)，`klassKlass`则是对`Klass`本身的描述(Java类的`class`对象在VM中表现为`klassKlass`)。
+
+有了对上述结构的认识，对应到内存中的存储区域，那么对象是怎么存储的，就了比较清楚的认识：对象实例(`instanceOopDesc`)保存在堆上，对象的元数据(`instanceKlass`)保存在方法区，对象的引用则保存在栈上。
+
+因此，关于本小节，对OOP-Klass Model的讨论，可以用一句简洁明了的话来总结其意义：一个Java类在被VM加载时，JVM会为其在方法区创建一个`instanceKlass`，来表示该类的class信息。当我们在代码中基于此类用new创建一个新对象时，实际上JVM会去堆上创建一个instanceOopDesc对象，该对象保含对象头markWord和klass指针，klass指针指向方法区中的instanceKlass,markWord则保存一些锁、GC等相关的运行时数据。而在堆上创建的这个instanceOopDesc所对应的地址会被用来创建一个引用，赋给当前线程运行时栈上的一个变量。
+
 ```java
 Object ob = new Object();
 ```
 
-在java中一个空Object对象的大小是8byte，那么它所占的空间为：4byte+8byte。4byte为Java栈中保存引用的所需要的空间。8byte为Java堆中对象的信息。Java非基本类型对象都默认继承Object对象，大小必须大于8byte。
+在java中一个空Object对象的大小是8byte，那么它所占的空间为：4byte+8byte。4byte为klass保存引用的所需要的空间。8byte为Java堆中对象markWord的信息。Java非基本类型对象都默认继承Object对象，大小必须大于8byte。
 
 ```java
 Class NewObject {
@@ -150,7 +160,6 @@ Class NewObject {
   | Float        | 没有缓存         | float            | 32           |
   | Double       | 没有缓存         | double           | 64           |
 
-  
 
 ## 引用类信息
 
