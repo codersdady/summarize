@@ -2,6 +2,8 @@
 
 [调优总结](https://www.cnblogs.com/andy-zhou/p/5327288.html)
 
+[sychronized以及JVM层面对象](https://blog.csdn.net/qq_24434251/article/details/105663539?utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-1.control&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-1.control)
+
 ## JDK是什么
 
 - JDK 是用于支持 Java 程序开发的最小环境。
