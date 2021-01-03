@@ -1,7 +1,5 @@
 # java基础
 
-
-
 ## Java中Runnable和Thread以及Callable的区别
 
 ### 继承Thread
